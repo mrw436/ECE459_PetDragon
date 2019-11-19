@@ -42,6 +42,17 @@ int starttime=0;
 int hit =0;
 int readyy =0; //  need to stop one hit from counting multiple times towards players score, once I turn off led wait for next coordinator message
 
+float move_vals[2];
+
+void forward(float);
+void backward(float);
+void move(float, float);
+void stop();
+void test();
+
+PwmOut servoL(p25);
+PwmOut servoR(p26);
+
 RF_RX_INFO rfRxInfo;
 RF_TX_INFO rfTxInfo;
 
@@ -106,6 +117,50 @@ int main(void)
 	return 0;
 }
 
+void test(){
+		int count = 0;
+		while (count < 10) {
+        for(float offset=0.0; offset<0.001; offset+=0.0001) {
+            servoL.pulsewidth(0.001505 + offset); // servo position determined by a pulsewidth between 1-2ms
+						servoR.pulsewidth(0.001505 - offset); // servo position determined by a pulsewidth between 1-2ms
+            wait(1);
+						//printf("pw: %f\r\n", (0.001 + offset));
+						count++;
+        }
+    }
+}
+
+void forward(float offset){
+	printf("forward offset: %f \r\n", offset);
+		servoL.period(0.020);
+		servoR.period(0.020);
+		servoL.pulsewidth(0.001505 - offset); // servo position determined by a pulsewidth between 1-2ms
+		servoR.pulsewidth(0.001505 + offset); 	
+}
+
+void backward(float offset){
+		printf("backward offset: %f \r\n", offset);
+		servoL.period(0.020);
+		servoR.period(0.020);
+		servoL.pulsewidth(0.001505 + offset); // servo position determined by a pulsewidth between 1-2ms
+		servoR.pulsewidth(0.001505 - offset); 
+}
+
+//ok so joystick left goes right and right goes left but when I tried to fix it it got fucked up somehow so I know this code works except for that
+void move(float lr_offset, float ud_offset){
+	servoL.period(0.020);
+	servoR.period(0.020);
+	servoL.pulsewidth(0.001505 + 0.001 * ((0.5 - lr_offset) + (0.5 - ud_offset))); // servo position determined by a pulsewidth between 1-2ms
+	servoR.pulsewidth(0.001505 + 0.001 * ((0.5 - lr_offset) + (ud_offset - 0.5)));
+}
+
+void stop(){
+	servoL.period(0);
+	servoR.period(0);
+	//servoL.pulsewidth(0.001505);
+	//servoR.pulsewidth(0.001300);
+}
+
 void rx_task ()
 {
   uint8_t i, len, rssi;
@@ -165,8 +220,30 @@ void rx_task ()
 			for (i = 0; i < len; i++)
 				printf ("%c", rx_buf[i]);
 			printf ("]\r\n");
+			
+			char *token = NULL;
+			int index = 0;
+			
+			//if strok doesn't work I think you can use strtof instead in a different way and it'll still work
+			
+			//this is kind of unsafe because if any of the formats are wrong it'll error but just be aware of that
+			for (token = strtok(rx_buf, ","); token != NULL; token = strtok(NULL, ","))
+			{
+				char *unconverted;
+				move_vals[index] = strtof(token, NULL);//&unconverted);
+				printf("%f \r\n", move_vals[index]);
+				//if (!isspace(*unconverted) && *unconverted != 0)
+				if (*unconverted != 0)					
+				{
+					/**
+					 * Input string contains a character that's not valid
+					 * in a floating point constant
+					 */
+				}
+				index += 1;
+			}
+			index = 0;
 		}
-		
 		
 		//nrk_led_clr (ORANGE_LED);
 	 
@@ -181,6 +258,8 @@ void rx_task ()
 			all_LEDs_set();// turn led on
 			rxContentSuccess1++;
 		}
+		
+		//move(move_vals[0], move_vals[1]);
 		
 		// Change something to make sure the buffer isn't the same if no buffer fill from Rx occurs
 		//rx_buf[1] = '0';
