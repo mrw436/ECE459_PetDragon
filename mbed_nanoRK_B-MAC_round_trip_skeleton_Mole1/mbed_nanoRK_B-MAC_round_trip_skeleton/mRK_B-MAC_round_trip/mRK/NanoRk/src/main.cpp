@@ -24,6 +24,10 @@ nrk_task_type TX_TASK;
 NRK_STK tx_task_stack[NRK_APP_STACKSIZE];
 void tx_task (void);
 
+nrk_task_type MOVE_TASK;
+NRK_STK move_task_stack[NRK_APP_STACKSIZE];
+void move_task (void);
+
 void nrk_create_taskset ();
 
 char tx_buf[RF_MAX_PAYLOAD_SIZE];
@@ -42,7 +46,7 @@ int starttime=0;
 int hit =0;
 int readyy =0; //  need to stop one hit from counting multiple times towards players score, once I turn off led wait for next coordinator message
 
-float move_vals[2];
+float move_vals[40]; //i'm really just sticking arbitrary numbers here at this point, they don't make a difference anyway
 
 void forward(float);
 void backward(float);
@@ -88,78 +92,69 @@ void mrfIsrCallback()
 
 int main(void)
 {	
-	nrk_setup_ports();
+//	nrk_setup_ports();
 	
+	//PwmOut servoL(p25);
+	//PwmOut servoR(p26);	
+//	
+//	servoL.period(0.020);
+//	servoR.period(0.020);
+//	servoL.pulsewidth(0.001505 - 0.001); // servo position determined by a pulsewidth between 1-2ms
+//	servoR.pulsewidth(0.001505 + 0.001);
+//	
+	printf("what\r\n");
+	nrk_setup_ports();
 	nrk_init();
 	bmac_task_config();
 	nrk_create_taskset();
   nrk_start();
-	
-	while(1) {
-		if (clock()-starttime > waittime) // 5 seconds pls, double check/test what clock() returns to make sure milliseconds correct
-		{
-			timeup=1;
-			clearToTx = 1;
-			all_LEDs_clr();// turn led off
-		}
-		if (pr_covered == 1) // photoresistor covered
-		{
-			hit = 1;
-			all_LEDs_clr();// turn led off
-		}
-		if (timeup==0 && hit==1)
-		{
-			molehit=1;
-			clearToTx = 1;
-		}
-	}
-	
+
 	return 0;
 }
 
-void test(){
-		int count = 0;
-		while (count < 10) {
-        for(float offset=0.0; offset<0.001; offset+=0.0001) {
-            servoL.pulsewidth(0.001505 + offset); // servo position determined by a pulsewidth between 1-2ms
-						servoR.pulsewidth(0.001505 - offset); // servo position determined by a pulsewidth between 1-2ms
-            wait(1);
-						//printf("pw: %f\r\n", (0.001 + offset));
-						count++;
-        }
-    }
-}
+//void test(){
+//		int count = 0;
+//		while (count < 10) {
+//        for(float offset=0.0; offset<0.001; offset+=0.0001) {
+//            servoL.pulsewidth(0.001505 + offset); // servo position determined by a pulsewidth between 1-2ms
+//						servoR.pulsewidth(0.001505 - offset); // servo position determined by a pulsewidth between 1-2ms
+//            wait(1);
+//						//printf("pw: %f\r\n", (0.001 + offset));
+//						count++;
+//        }
+//    }
+//}
 
-void forward(float offset){
-	printf("forward offset: %f \r\n", offset);
-		servoL.period(0.020);
-		servoR.period(0.020);
-		servoL.pulsewidth(0.001505 - offset); // servo position determined by a pulsewidth between 1-2ms
-		servoR.pulsewidth(0.001505 + offset); 	
-}
+//void forward(float offset){
+//	printf("forward offset: %f \r\n", offset);
+//		servoL.period(0.020);
+//		servoR.period(0.020);
+//		servoL.pulsewidth(0.001505 - offset); // servo position determined by a pulsewidth between 1-2ms
+//		servoR.pulsewidth(0.001505 + offset); 	
+//}
 
-void backward(float offset){
-		printf("backward offset: %f \r\n", offset);
-		servoL.period(0.020);
-		servoR.period(0.020);
-		servoL.pulsewidth(0.001505 + offset); // servo position determined by a pulsewidth between 1-2ms
-		servoR.pulsewidth(0.001505 - offset); 
-}
+//void backward(float offset){
+//		printf("backward offset: %f \r\n", offset);
+//		servoL.period(0.020);
+//		servoR.period(0.020);
+//		servoL.pulsewidth(0.001505 + offset); // servo position determined by a pulsewidth between 1-2ms
+//		servoR.pulsewidth(0.001505 - offset); 
+//}
 
-//ok so joystick left goes right and right goes left but when I tried to fix it it got fucked up somehow so I know this code works except for that
-void move(float lr_offset, float ud_offset){
-	servoL.period(0.020);
-	servoR.period(0.020);
-	servoL.pulsewidth(0.001505 + 0.001 * ((0.5 - lr_offset) + (0.5 - ud_offset))); // servo position determined by a pulsewidth between 1-2ms
-	servoR.pulsewidth(0.001505 + 0.001 * ((0.5 - lr_offset) + (ud_offset - 0.5)));
-}
+////ok so joystick left goes right and right goes left but when I tried to fix it it got fucked up somehow so I know this code works except for that
+//void move(float lr_offset, float ud_offset){
+//	servoL.period(0.020);
+//	servoR.period(0.020);
+//	servoL.pulsewidth(0.001505 + 0.001 * ((0.5 - lr_offset) + (0.5 - ud_offset))); // servo position determined by a pulsewidth between 1-2ms
+//	servoR.pulsewidth(0.001505 + 0.001 * ((0.5 - lr_offset) + (ud_offset - 0.5)));
+//}
 
-void stop(){
-	servoL.period(0);
-	servoR.period(0);
-	//servoL.pulsewidth(0.001505);
-	//servoR.pulsewidth(0.001300);
-}
+//void stop(){
+//	servoL.period(0);
+//	servoR.period(0);
+//	//servoL.pulsewidth(0.001505);
+//	//servoR.pulsewidth(0.001300);
+//}
 
 void rx_task ()
 {
@@ -168,6 +163,8 @@ void rx_task ()
 	char *local_rx_buf;
   nrk_time_t check_period;
   //printf ("rx_task PID=%d\r\n", nrk_get_pid ());
+	//PwmOut servoL(p25);
+	//PwmOut servoR(p26);	
 
   // init bmac
   bmac_init (RADIO_CHANNEL);
@@ -244,26 +241,19 @@ void rx_task ()
 			}
 			index = 0;
 		}
+		float lr_offset = move_vals[0];
+		float ud_offset = move_vals[1];
+		printf("mv %f %f\r\n", lr_offset, ud_offset);
+
+//		servoL.period(0.020);
+//		servoR.period(0.020);
+//		servoL.pulsewidth(0.001505 + 0.001 * ((0.5 - lr_offset) + (0.5 - ud_offset))); // servo position determined by a pulsewidth between 1-2ms
+//		servoR.pulsewidth(0.001505 + 0.001 * ((0.5 - lr_offset) + (ud_offset - 0.5)));
+		//printf("hi\r\n");
 		
-		//nrk_led_clr (ORANGE_LED);
-	 
-		// This is for the mole nodes to receive a signal from the coordinator
-		// to have the mole "pop up".
-		
-		// Vuk: Rx content test
-		if (strncmp(rx_buf, "mole", 46) == 0)
-		{
-			waittime = 5;
-			starttime = clock();
-			all_LEDs_set();// turn led on
-			rxContentSuccess1++;
-		}
+		rxContentSuccess1++;
 		
 		//move(move_vals[0], move_vals[1]);
-		
-		// Change something to make sure the buffer isn't the same if no buffer fill from Rx occurs
-		//rx_buf[1] = '0';
-		//for some reason the above line is making it so node can't read at all;
 		
 		// Release the RX buffer so future packets can arrive 
 		bmac_rx_pkt_release();
@@ -275,6 +265,12 @@ void rx_task ()
 }
 
 uint8_t ctr_cnt[4];
+
+void move_task(){
+	printf("hi");
+	nrk_signal_register (1);
+	nrk_wait_until_next_period ();
+}
 
 void tx_task ()
 {
@@ -313,7 +309,7 @@ void tx_task ()
   ctr_cnt[0]=0; ctr_cnt[1]=0; ctr_cnt[2]=0; ctr_cnt[3]=0;
   cnt = 0;
 	
-	int packetsToTx = 1; // was 1000
+	int packetsToTx = 100; // was 1000
 
 	#ifdef NODE1 // was node 1
   while (packetsToTx != 0)
@@ -345,6 +341,29 @@ void tx_task ()
 			}
 			
 			// want to ignore molehits when timeup=1
+			
+			char *token = NULL;
+			int index = 0;
+			
+			//if strok doesn't work I think you can use strtof instead in a different way and it'll still work
+			
+			//this is kind of unsafe because if any of the formats are wrong it'll error but just be aware of that
+			for (token = strtok(rx_buf, ","); token != NULL; token = strtok(NULL, ","))
+			{
+				char *unconverted;
+				move_vals[index] = strtof(token, NULL);//&unconverted);
+				printf("%f \r\n", move_vals[index]);
+				//if (!isspace(*unconverted) && *unconverted != 0)
+				if (*unconverted != 0)					
+				{
+					/**
+					 * Input string contains a character that's not valid
+					 * in a floating point constant
+					 */
+				}
+				index += 1;
+			}
+			index = 0;
 			
 			bmac_addr_decode_dest_mac(0x000A);
 			
@@ -449,4 +468,18 @@ void nrk_create_taskset ()
   TX_TASK.offset.secs = 0;
   TX_TASK.offset.nano_secs = 0; 
 	nrk_activate_task (&TX_TASK);
+	
+	MOVE_TASK.task = move_task;
+  nrk_task_set_stk( &MOVE_TASK, move_task_stack, NRK_APP_STACKSIZE);
+  MOVE_TASK.prio = 2;
+  MOVE_TASK.FirstActivation = TRUE;
+  MOVE_TASK.Type = BASIC_TASK;
+  MOVE_TASK.SchType = PREEMPTIVE;
+  MOVE_TASK.period.secs = 0;
+  MOVE_TASK.period.nano_secs = 50*NANOS_PER_MS;
+  MOVE_TASK.cpu_reserve.secs = 0;
+  MOVE_TASK.cpu_reserve.nano_secs = 0;
+  MOVE_TASK.offset.secs = 0;
+  MOVE_TASK.offset.nano_secs = 0;
+  //nrk_activate_task (&MOVE_TASK);
 }

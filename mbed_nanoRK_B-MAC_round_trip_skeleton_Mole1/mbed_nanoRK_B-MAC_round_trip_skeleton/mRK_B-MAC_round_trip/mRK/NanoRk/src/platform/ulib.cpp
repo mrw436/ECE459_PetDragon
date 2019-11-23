@@ -221,7 +221,7 @@ void nrk_setup_ports()
 void PORT_INIT(void) 
 {
     initLED(); //led initialisation Abhijeet
-		initDEBUG();
+		//initDEBUG();	//we're hacking into the mainframehere folks let's hope it doesn't fuckup
     setupSPIPins();
     setup_uartPins();
 } 

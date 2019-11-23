@@ -226,6 +226,8 @@ void rx_task ()
     // Wait until an RX packet is received
     val = bmac_wait_until_rx_pkt ();
 		//printf("got packet? %s\r\n", rx_buf);
+		
+		//for some reason this needs to happen in rx task in order for it to work!! no clue why
 		lr_pinval = lr_pin.read();
 		ud_pinval = ud_pin.read();
 		printf("%f, %f\r\n", lr_pinval, ud_pinval);
@@ -241,25 +243,6 @@ void rx_task ()
 		//printf ("]\r\n");
 		//nrk_led_clr (ORANGE_LED);
 	 
-		// This is for the coordinator node to receive feedback from mole nodes
-		// about whether the player successfully whacked the mole.
-		
-		// Vuk: Rx content test
-		if (strncmp(rx_buf, "yes", 46) == 0)
-		{
-				playerscore++;
-				printf("C-Mole got hit %d\n",playerscore);
-				clearToTx = 1; // this doesnt matter for node 1
-			
-		} 
-		else if (strncmp(rx_buf, "no", 46) == 0)
-		{
-				playerfail++;
-				printf("C-Mole escaped %d\n",playerfail);
-				clearToTx = 1; // this doesnt matter for node 1
-		}
-		
-		
 		// Change something to make sure the buffer isn't the same if no buffer fill from Rx occurs
 		rx_buf[1] = '0';
 		

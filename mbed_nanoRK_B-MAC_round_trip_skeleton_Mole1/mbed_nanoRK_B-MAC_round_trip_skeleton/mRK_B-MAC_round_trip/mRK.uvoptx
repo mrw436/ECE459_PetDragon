@@ -294,7 +294,7 @@
       <GroupNumber>1</GroupNumber>
       <FileNumber>10</FileNumber>
       <FileType>8</FileType>
-      <tvExp>0</tvExp>
+      <tvExp>1</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
       <PathWithFileName>.\mRK\NanoRk\src\kernel\source\nrk.cpp</PathWithFileName>
